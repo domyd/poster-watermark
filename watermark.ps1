@@ -3,7 +3,8 @@ param (
     [String]$Watermark,
     [String]$Color,
     [String]$Output,
-    [double]$Opacity = 0.0
+    [double]$Opacity = 0.0,
+    [switch]$SaveSettings = $false
 )
 
 # Example usage:
@@ -48,11 +49,11 @@ $logo_corner = $logo.corners | where { $_.direction -eq "nw" } | select -First 1
 $logo_path = Join-Path $PSScriptRoot $logo.file
 
 if (-not [string]::IsNullOrEmpty($Output)) {
-    $settings.output = Join-Path $img_path.DirectoryName "$($img_path.BaseName).$($logo.name)$($img_path.Extension)"
-}
-elseif ([string]::IsNullOrEmpty($settings.output)) {
     New-Item $Output -Force | Out-Null
     $settings.output = (Get-Item $Output).FullName
+}
+elseif ([string]::IsNullOrEmpty($settings.output)) {
+    $settings.output = Join-Path $img_path.DirectoryName "$($img_path.BaseName).$($logo.name)$($img_path.Extension)"
 }
 
 Write-Verbose "Using base image from $img_path"
@@ -88,6 +89,19 @@ magick convert `
 
 # composite onto image
 magick composite -gravity NorthWest -geometry +$offset_x+$offset_y "$rasterizedLogo" "$img_path" "$($settings.output)"
+
+# save settings maybe
+if ($SaveSettings) {
+    Write-Host "Saving watermark settings to $watermark_json_path"
+    $filename = (Get-Item $settings.output).Name
+    $out_settings = @{
+        watermark = $settings.watermark
+        opacity   = $settings.opacity
+        color     = $settings.color
+        filename  = $filename
+    }
+    ConvertTo-Json $out_settings | Out-File $watermark_json_path
+}
 
 # delete rasterized logo
 Remove-Item $rasterizedLogo
