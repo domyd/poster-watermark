@@ -1,32 +1,64 @@
 param (
-    [Parameter(Mandatory = $true)][String]$Watermark,
     [Parameter(Mandatory = $true)][String]$Image,
-    [Parameter(Mandatory = $true)][String]$Color,
+    [String]$Watermark,
+    [String]$Color,
     [String]$Output,
-    [double]$Opacity = 1.0
+    [double]$Opacity = 0.0
 )
 
 # Example usage:
 # .\watermark.ps1 -Watermark hbo -Color white -Image poster.png
 # .\watermark.ps1 -Watermark showtime -Color black -Image poster.jpg
 
-$watermarks = (Get-Content (Join-Path $PSScriptRoot "marks.json") | ConvertFrom-Json).watermarks
-$logo = $watermarks | where { $_.name -eq $Watermark } | select -First 1
-$logo_corner = $logo.corners | where { $_.direction -eq "nw" } | select -First 1
-
-# normalize file paths
-$logo_path = Join-Path $PSScriptRoot $logo.file
 $img_path = Get-Item $Image
-if ([string]::IsNullOrEmpty($Output)) {
-    $output_image = Join-Path $img_path.DirectoryName "$($img_path.BaseName).$($logo.name)$($img_path.Extension)"
-} else {
+$settings = @{
+    watermark = [string]::Empty
+    color     = [string]::Empty
+    opacity   = 1.0
+    output    = [string]::Empty
+}
+
+# check if watermark.json exists for image file
+$watermark_json_path = Join-Path $img_path.DirectoryName "$($img_path.BaseName).watermark.json"
+if (Test-Path $watermark_json_path) {
+    # use settings from watermark.json file
+    Write-Host "Using settings from $($img_path.BaseName).watermark.json in target directory."
+    $settings_json = Get-Content $watermark_json_path | ConvertFrom-Json
+    $settings.watermark = $settings_json.watermark
+    $settings.color = $settings_json.color
+    $settings.opacity = $settings_json.opacity
+    $settings.output = Join-Path $img_path.DirectoryName $settings_json.filename
+}
+
+if (-not [string]::IsNullOrEmpty($Watermark)) {
+    $settings.watermark = $Watermark
+}
+
+if (-not [string]::IsNullOrEmpty($Color)) {
+    $settings.color = $Color
+}
+
+if ($Opacity -gt 0.0) {
+    $settings.opacity = $Opacity
+}
+
+$watermarks = (Get-Content (Join-Path $PSScriptRoot "marks.json") | ConvertFrom-Json).watermarks
+$logo = $watermarks | where { $_.name -eq $settings.watermark } | select -First 1
+$logo_corner = $logo.corners | where { $_.direction -eq "nw" } | select -First 1
+$logo_path = Join-Path $PSScriptRoot $logo.file
+
+if (-not [string]::IsNullOrEmpty($Output)) {
+    $settings.output = Join-Path $img_path.DirectoryName "$($img_path.BaseName).$($logo.name)$($img_path.Extension)"
+}
+elseif ([string]::IsNullOrEmpty($settings.output)) {
     New-Item $Output -Force | Out-Null
-    $output_image = (Get-Item $Output).FullName
+    $settings.output = (Get-Item $Output).FullName
 }
 
 Write-Verbose "Using base image from $img_path"
-Write-Verbose "Using watermark from $logo_path"
-Write-Verbose "Output will be written to $output_image"
+Write-Verbose "Using watermark '$($settings.watermark)' from $logo_path"
+Write-Verbose "Output will be written to $($settings.output)"
+Write-Verbose "settings: color = $($settings.color), opacity = $($settings.opacity)"
 
 # img_scale is 1.0 on 2000 px wide image
 $img_width = magick identify -format "%[fx:w]" $img_path
@@ -43,18 +75,21 @@ $offset_y = ($img_scale * $logo_corner.offset.y) - ($logo_scale * $logo_corner.a
 Write-Verbose "offset = x:$offset_x, y:$offset_y"
 
 # rasterize logo
-$rasterizedLogo = "$($logo.name).png"
+$tmpFile = New-TemporaryFile
+$rasterizedLogo = Join-Path $tmpFile.DirectoryName "$($tmpFile.BaseName).png"
+Move-Item $tmpFile -Destination $rasterizedLogo
+Write-Verbose "rasterized logo as $rasterizedLogo"
 magick convert `
     -background none `
     -geometry x$logo_height `
-    -fill $Color -colorize 100 `
-    -channel A -evaluate multiply $Opacity +channel `
-    "$logo_path" $rasterizedLogo
+    -fill $settings.color -colorize 100 `
+    -channel A -evaluate multiply $settings.opacity +channel `
+    "$logo_path" "$rasterizedLogo"
 
 # composite onto image
-magick composite -gravity NorthWest -geometry +$offset_x+$offset_y $rasterizedLogo $Image $output_image
+magick composite -gravity NorthWest -geometry +$offset_x+$offset_y "$rasterizedLogo" "$img_path" "$($settings.output)"
 
 # delete rasterized logo
 Remove-Item $rasterizedLogo
 
-Write-Host "Watermarked image saved as $output_image."
+Write-Host "Watermarked image saved as $($settings.output)."
