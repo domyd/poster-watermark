@@ -1,7 +1,8 @@
 param (
     [Parameter(Mandatory = $true)][String]$Watermark,
     [Parameter(Mandatory = $true)][String]$Image,
-    [Parameter(Mandatory = $true)][String]$Color
+    [Parameter(Mandatory = $true)][String]$Color,
+    [double]$Opacity = 1.0
 )
 
 # Example usage:
@@ -28,7 +29,12 @@ Write-Verbose "offset = x:$offset_x, y:$offset_y"
 
 # rasterize logo
 $rasterizedLogo = "$($logo.name).png"
-magick convert -background none -geometry x$logo_height -fill $Color -colorize 100 "$($logo.file)" $rasterizedLogo
+magick convert `
+    -background none `
+    -geometry x$logo_height `
+    -fill $Color -colorize 100 `
+    -channel A -evaluate multiply $Opacity +channel `
+    "$($logo.file)" $rasterizedLogo
 
 # composite onto image
 $output_image = "$([System.IO.Path]::GetFileNameWithoutExtension($Image)).$($logo.name)$([System.IO.Path]::GetExtension($Image))"
