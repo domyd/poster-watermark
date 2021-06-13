@@ -5,12 +5,17 @@
             "name": "hbo",
             "width": 422,
             "height": 174,
+            "normalized_height": 90,
             "corners": [
                 {
                     "direction": "nw",
-                    "offset": {
+                    "anchor": {
                         "x": 0,
                         "y": 2.848
+                    },
+                    "offset": {
+                        "x": 110,
+                        "y": 110
                     }
                 }
             ]
@@ -20,12 +25,17 @@
             "name": "showtime",
             "width": 500,
             "height": 179,
+            "normalized_height": 108,
             "corners": [
                 {
                     "direction": "nw",
+                    "anchor": {
+                        "x": 97.811,
+                        "y": 79.701
+                    },
                     "offset": {
-                        "x": 55.122,
-                        "y": 32.307
+                        "x": 149,
+                        "y": 148
                     }
                 }
             ]
