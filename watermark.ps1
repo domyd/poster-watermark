@@ -2,6 +2,7 @@ param (
     [Parameter(Mandatory = $true)][String]$Watermark,
     [Parameter(Mandatory = $true)][String]$Image,
     [Parameter(Mandatory = $true)][String]$Color,
+    [String]$Output,
     [double]$Opacity = 1.0
 )
 
@@ -16,9 +17,16 @@ $logo_corner = $logo.corners | where { $_.direction -eq "nw" } | select -First 1
 # normalize file paths
 $logo_path = Join-Path $PSScriptRoot $logo.file
 $img_path = Get-Item $Image
+if ([string]::IsNullOrEmpty($Output)) {
+    $output_image = Join-Path $img_path.DirectoryName "$($img_path.BaseName).$($logo.name)$($img_path.Extension)"
+} else {
+    New-Item $Output -Force | Out-Null
+    $output_image = (Get-Item $Output).FullName
+}
 
 Write-Verbose "Using base image from $img_path"
 Write-Verbose "Using watermark from $logo_path"
+Write-Verbose "Output will be written to $output_image"
 
 # img_scale is 1.0 on 2000 px wide image
 $img_width = magick identify -format "%[fx:w]" $img_path
@@ -44,8 +52,6 @@ magick convert `
     "$logo_path" $rasterizedLogo
 
 # composite onto image
-$output_image = Join-Path $img_path.DirectoryName "$($img_path.BaseName).$($logo.name)$($img_path.Extension)"
-Write-Verbose "Writing output to $output_image"
 magick composite -gravity NorthWest -geometry +$offset_x+$offset_y $rasterizedLogo $Image $output_image
 
 # delete rasterized logo
