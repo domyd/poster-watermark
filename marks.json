@@ -39,6 +39,26 @@
                     }
                 }
             ]
+        },
+        {
+            "file": "comedy-central.svg",
+            "name": "comedy-central",
+            "width": 3543,
+            "height": 1222,
+            "normalized_height": 96,
+            "corners": [
+                {
+                    "direction": "nw",
+                    "anchor": {
+                        "x": 803.723,
+                        "y": 459.486
+                    },
+                    "offset": {
+                        "x": 163,
+                        "y": 142
+                    }
+                }
+            ]
         }
     ]
 }
