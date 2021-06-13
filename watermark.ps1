@@ -44,8 +44,8 @@ if ($Opacity -gt 0.0) {
 }
 
 $watermarks = (Get-Content (Join-Path $PSScriptRoot "marks.json") | ConvertFrom-Json).watermarks
-$logo = $watermarks | where { $_.name -eq $settings.watermark } | select -First 1
-$logo_corner = $logo.corners | where { $_.direction -eq "nw" } | select -First 1
+$logo = $watermarks | Where-Object { $_.name -eq $settings.watermark } | Select-Object -First 1
+$logo_corner = $logo.corners | Where-Object { $_.direction -eq "nw" } | Select-Object -First 1
 $logo_path = Join-Path $PSScriptRoot $logo.file
 
 if (-not [string]::IsNullOrEmpty($Output)) {
