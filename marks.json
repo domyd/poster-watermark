@@ -1,7 +1,7 @@
 {
     "watermarks": [
         {
-            "file": "hbo.svg",
+            "file": "svg/hbo.svg",
             "name": "hbo",
             "width": 422,
             "height": 174,
@@ -21,7 +21,7 @@
             ]
         },
         {
-            "file": "showtime.svg",
+            "file": "svg/showtime.svg",
             "name": "showtime",
             "width": 500,
             "height": 179,
@@ -41,7 +41,7 @@
             ]
         },
         {
-            "file": "comedy-central.svg",
+            "file": "svg/comedy-central.svg",
             "name": "comedy-central",
             "width": 3543,
             "height": 1222,
@@ -61,7 +61,7 @@
             ]
         },
         {
-            "file": "adult-swim.svg",
+            "file": "svg/adult-swim.svg",
             "name": "adult-swim",
             "width": 660,
             "height": 122,

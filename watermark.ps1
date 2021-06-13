@@ -9,12 +9,19 @@ param (
 # .\watermark.ps1 -Watermark hbo -Color white -Image poster.png
 # .\watermark.ps1 -Watermark showtime -Color black -Image poster.jpg
 
-$watermarks = (Get-Content .\marks.json | ConvertFrom-Json).watermarks
+$watermarks = (Get-Content (Join-Path $PSScriptRoot "marks.json") | ConvertFrom-Json).watermarks
 $logo = $watermarks | where { $_.name -eq $Watermark } | select -First 1
 $logo_corner = $logo.corners | where { $_.direction -eq "nw" } | select -First 1
 
+# normalize file paths
+$logo_path = Join-Path $PSScriptRoot $logo.file
+$img_path = Get-Item $Image
+
+Write-Verbose "Using base image from $img_path"
+Write-Verbose "Using watermark from $logo_path"
+
 # img_scale is 1.0 on 2000 px wide image
-$img_width = magick identify -format "%[fx:w]" $Image
+$img_width = magick identify -format "%[fx:w]" $img_path
 $img_scale = $img_width / 2000
 $logo_height = $img_scale * $logo.normalized_height
 $logo_scale = $logo_height / $logo.height
@@ -34,10 +41,11 @@ magick convert `
     -geometry x$logo_height `
     -fill $Color -colorize 100 `
     -channel A -evaluate multiply $Opacity +channel `
-    "$($logo.file)" $rasterizedLogo
+    "$logo_path" $rasterizedLogo
 
 # composite onto image
-$output_image = "$([System.IO.Path]::GetFileNameWithoutExtension($Image)).$($logo.name)$([System.IO.Path]::GetExtension($Image))"
+$output_image = Join-Path $img_path.DirectoryName "$($img_path.BaseName).$($logo.name)$($img_path.Extension)"
+Write-Verbose "Writing output to $output_image"
 magick composite -gravity NorthWest -geometry +$offset_x+$offset_y $rasterizedLogo $Image $output_image
 
 # delete rasterized logo
