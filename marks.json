@@ -79,6 +79,26 @@
                     }
                 }
             ]
+        },
+        {
+            "file": "svg/crackle.svg",
+            "name": "crackle",
+            "width": 1000,
+            "height": 178,
+            "normalized_height": 56,
+            "corners": [
+                {
+                    "direction": "nw",
+                    "anchor": {
+                        "x": 123.732,
+                        "y": 37.829
+                    },
+                    "offset": {
+                        "x": 129,
+                        "y": 138
+                    }
+                }
+            ]
         }
     ]
 }
